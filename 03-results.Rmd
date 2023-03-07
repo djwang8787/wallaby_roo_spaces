@@ -1,0 +1,188 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Results {#results}
+
+
+## Enclosure use
+```{r si-t, eval = F}
+# to be completely removed from the results.
+spi.table = spi.df %>% group_by(species, treatment) %>%
+  dplyr::summarise(CI = CI(spi)[2]-CI(spi)[3],
+                   mean = mean(spi))
+
+si.table = si.df %>% group_by(species, treatment) %>% 
+  dplyr::summarise(mean = mean(H),
+                   CI = CI(H)[2] - CI(H)[3])
+table = data.frame(
+  Species = c("BW", "BW", "K", "K", "K", "SW"),
+  Mean = round(spi.table$mean, 2),
+  "Lower" = round(spi.table$mean, 2) - round(spi.table$CI, 2),
+  "Upper" = round(spi.table$mean, 2) + round(spi.table$CI, 2),
+  Mean = round(si.table$mean, 2),
+  "Lower" = round(si.table$mean, 2) - round(si.table$CI, 2),
+  "Upper" = round(si.table$mean, 2) + round(si.table$CI, 2),
+  check.names = F
+)
+
+kable(table,
+      booktabs = T,
+      caption = "A summary table with the daily modified Spread of Participation (SPI) index and Shannon H-index (SI) values of resident Ks and introduced BWs and SWs across the three treatment levels.") %>%
+  kable_styling(position = "center", 
+                latex_options = c("repeat_header"),
+                full_width = T) %>%
+  column_spec(1:2, width = "8em",latex_valign = "m") %>%
+  collapse_rows(1, latex_hline = "major") %>%
+  add_header_above(c(" ", "SPI" = 3, "SI" = 3)) 
+
+```
+
+Although the space use patterns of kangaroos remained relatively un-affected by the introduction of both wallaby species, the BWs exhibited a significant shift towards uneven space use after the introduction of the SWs (Figure \@ref(fig:spi-f)). Seemingly, the change in space use patterns exhibited by the BWs resulted in SPI values that were comparable to the newly-introduced SWs.
+
+```{r spi-f, fig.cap= "The Modified Spread of Participation Index (SPI) of Grey Kangaroos (*n* = 6; GKs), Bennett's wallabies (*n* = 4; BWs) and Swamp wallabies (*n* = 2; SWs) describing spatial use of a mixed-species exhibit in the Singapore Zoo. Treatment levels are indicated on the x-axis."}
+plot = spi.df %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(CI = CI(spi)[2]-CI(spi)[3],
+                   mean = mean(spi),
+                   upper = mean + CI,
+                   lower = mean - CI)
+plot$species = factor(plot$species, levels = c("GK", "BW", "SW")) 
+# to re-order the factors
+ggplot(data = plot, aes(x = as.factor(treatment), y = mean)) +
+  geom_point() +
+  geom_line() +    
+  geom_errorbar(data = plot, 
+                aes(ymin = lower,
+                  ymax = upper), width = 0.1) +
+  facet_grid(.~species, scales = "free_y") +
+  ylab("Daily Modified SPI") +
+  xlab("Treatment") +
+  theme_minimal()
+```
+
+In general, there is very little change observed in the GKs' EI values across the different zones of the exhibit except for the significant increase of utilisation in Zone 5 following the introduction of the SWs (Figure \@ref(fig:ei-f)). On the other hand, the introduction of the SWs incurred remarkable changes in the BWs zonal use of the exhibit. For instance, the use of Zones 1, 5 and 6 exhibited substantial shifts as the utilisation of the aforementioned zones decreased significantly while the use of Zones 2 and 4 increased significantly (Figure \@ref(fig:ei-f)). Lastly, the SWs exhibited a clear preference for Zone 1 while the EI value for the remaining zones demonstrated a relatively greater degree of under-utilisation.
+
+```{r ei-f, fig.cap= "The Electivity Index values (EI; -1 to 1) of resident Ks and introduced BWs and SWs across six separate zones within a mixed-species exhibit. Different shapes are used to represent the different treatments: circles, triangles and squares are used to represent Treatments 1, 2 and 3 respectively. Here, degree of utilisation corresponds to blue and red color; EI values above 0 describes extent of utilisation (i.e., coloured blue) while EI values below 0 describes extent of under-utilisation (i.e., coloured red)."}
+plot = ei.df %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(Z1 = mean(ew1),
+                   Z2 = mean(ew2),
+                   Z3 = mean(ew3),
+                   Z4 = mean(ew4),
+                   Z5 = mean(ew5),
+                   Z6 = mean(ew6))
+plot.ci = ei.df %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(ew1.CI = CI(ew1)[2]-CI(ew1)[3],
+                   ew2.CI = CI(ew2)[2]-CI(ew2)[3],
+                   ew3.CI = CI(ew3)[2]-CI(ew3)[3],
+                   ew4.CI = CI(ew4)[2]-CI(ew4)[3],
+                   ew5.CI = CI(ew5)[2]-CI(ew5)[3],
+                   ew6.CI = CI(ew6)[2]-CI(ew6)[3])
+
+plot = melt(plot, id.vars = c("species", "treatment"))
+plot.ci = melt(plot.ci, id.vars = c("species", "treatment"))
+plot = plot %>%
+  mutate(CI = plot.ci$value)
+plot$species = factor(plot$species, levels = c("K", "BW", "SW"))
+
+ggplot(data = plot, aes(x = variable, y = value, shape = as.factor(treatment), ymin = value-CI, ymax = value+CI, color = value > 0)) + 
+  geom_errorbar(width = 0.15, position = position_dodge(.5)) +
+  geom_point(size = 1.5, position = position_dodge(.5)) +
+  facet_wrap(.~species, ncol = 1) +
+  theme_minimal() +
+  xlab("Zone") +
+  ylab("EI index") +
+  scale_color_manual(values=c("red", "blue")) +
+  theme(legend.position = "None")
+```
+
+\newpage
+
+## Behavioural shifts
+
+In general, all three macropod species were mostly engaged in resting behaviour with feeding following closely (Figure \@ref(fig:ab-f)). Here, the introduction of the BWs did not incur any significant changes in the behaviour repertoire of the GKs. On the other hand, the introduction of the SWs resulted in a general decrease in locomotive and grooming behaviour in both GKs and BWs; BWs were also observed to rest less and engage in greater feeding and vigilant behaviours (Figure \@ref(fig:ab-f)).
+
+```{r ab-f, fig.cap= "The activity budgets of Grey kangaroos (GK), Bennett's wallabies (BWs) and Swamp wallabies (SWs) as computed across the different treatments (i.e., T1--T3). Treatment 1, 2 and 3 are colored red, green and blue, respectively. Simultaneous behaviours that occur < 1% across all three treatments were removed (i.e., Dr, N, P, Nso, Pso, O)."}
+# AB results
+plot = ab.df %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(Re = mean(Re.prop),
+                   Vi = mean(Vi.prop),
+                   Lo = mean(Lo.prop),
+                   #Dr = mean(Dr.prop),
+                   Fe = mean(Fe.prop),
+                   Gr = mean(Gr.prop))
+                   # N = mean(N.prop),
+                   # P = mean(P.prop),
+                   # Nso = mean(Nso.prop),
+                   # Pso = mean(Pso.prop),
+                   # O = mean(O.prop))
+plot = melt(plot, id.vars = c("species", "treatment"))
+
+plot.ci = ab.df %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(Re.CI = CI(Re.prop)[2]-CI(Re.prop)[3],
+                   Vi.CI = CI(Vi.prop)[2]-CI(Vi.prop)[3],
+                   Lo.CI = CI(Lo.prop)[2]-CI(Lo.prop)[3],
+                   #Dr.CI = CI(Dr.prop)[2]-CI(Dr.prop)[3],
+                   Fe.CI = CI(Fe.prop)[2]-CI(Fe.prop)[3],
+                   Gr.CI = CI(Gr.prop)[2]-CI(Gr.prop)[3],
+                   # N.CI = CI(N.prop)[2]-CI(N.prop)[3],
+                   # P.CI = CI(P.prop)[2]-CI(P.prop)[3],
+                   # Nso.CI = CI(Nso.prop)[2]-CI(Nso.prop)[3],
+                   # Pso.CI = CI(Pso.prop)[2]-CI(Pso.prop)[3],
+                   # O.CI = CI(O.prop)[2]-CI(O.prop)[3],
+                   )
+plot.ci = melt(plot.ci, id.vars = c("species", "treatment"))
+
+plot = plot %>%
+  mutate(CI = plot.ci$value)
+plot$species = factor(plot$species, levels = c("GK", "BW", "SW"))
+
+ggplot(data = plot, aes(x = variable, y = value, fill = as.factor(treatment), ymin = value-CI, ymax = value+CI)) + 
+  geom_bar(stat = 'identity', position = position_dodge(1.)) +
+  geom_errorbar(width = 0.2, position = position_dodge(1.0)) +
+  facet_wrap(species~., ncol = 1) +
+  theme_minimal() +
+  xlab("Behaviours") +
+  ylab("Proportion [%]") +
+  theme(legend.position = "None")
+
+```
+
+Although the change in behavioural diversity have been largely insignificant across treatments, there is some evidence to suggest that the introduction of the SWs effected a notable decrease in the behavioural diversity of GKs and BWs (Figure \@ref(fig:si-f)). On the other hand, the transition from T1 to T2 (i.e., introduction of the BWs) observed an small, albeit insignificant, increase in behavioural diversity in the GKs.
+
+```{r quickmath1}
+si.df2 = si.df %>%
+  group_by(species, day.no) %>%
+  dplyr::summarise(H = -sum(Vi.H,Lo.H,Fe.H,Gr.H),
+                   treatment = first(treatment))
+si.df2$species = factor(si.df2$species, levels = c("GK", "BW", "SW"))
+ci.df = si.df2 %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(CI = CI(H)[2] - CI(H)[3])
+
+si.df3 = si.df2 %>%
+  group_by(species, treatment) %>%
+  dplyr::summarise(H = mean(H),
+                   treatment = first(treatment))
+si.df3$CI = ci.df$CI
+```
+
+```{r si-f, fig.cap= "The daily Shannon Index (SI) adapted to examine behavioural diversity in Grey Kangaroos (*n* = 6; GKs), Bennett's wallabies (*n* = 4; BWs) and Swamp wallabies (*n* = 2; SWs). Here, greater SI values describes a greater diversity in exhibited behaviour and is usually indicative of better animal welfare."}
+ggplot(data = si.df3, aes(x = treatment, y = H, 
+                          ymin = H-CI, ymax = H+CI, shape = as.factor(treatment))) + 
+  geom_errorbar(width = 0.2) +
+  geom_point(size = 1.5) +
+  geom_line() +
+  facet_wrap(.~species, ncol = 3) +
+  theme_minimal() +
+  xlab("Treatments") +
+  ylab("SI") +
+  theme(legend.position = "None") +
+  scale_x_discrete(limits=c("1", "2", "3"))
+
+```
